@@ -1,0 +1,401 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum Verification {
+  VERIFIED
+  LIKELY
+  UNVERIFIED
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  MESSAGE_READY
+  CONTACT_OPENED
+  SENT_MANUALLY
+  REPLIED
+  INTERESTED
+  NOT_INTERESTED
+  FOLLOW_UP
+  CONVERTED
+  DO_NOT_CONTACT
+}
+
+enum CampaignStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum Schedule {
+  MANUAL
+  DAILY
+  WEEKLY
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum ProviderKind {
+  SEARCH
+  AI
+}
+
+enum Confidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Organization {
+  id               String   @id @default(cuid())
+  name             String
+  agencyName       String   @default("")
+  agencyDescription String  @default("")
+  agencyServices   String[] @default([])
+  agencyWebsite    String   @default("")
+  agencyPortfolio  String   @default("")
+  agencyContact    String   @default("")
+  writingStyle     String   @default("")
+  scoringWeights   Json?
+  createdAt        DateTime @default(now())
+  users            User[]
+  campaigns        Campaign[]
+  leads            Lead[]
+  providers        ProviderConnection[]
+  jobs             BackgroundJob[]
+  auditLogs        AuditLog[]
+  doNotContact     DoNotContact[]
+  templates        MessageTemplate[]
+  followUps        FollowUpTask[]
+  queryLogs        QueryLog[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String   @unique
+  name           String
+  passwordHash   String
+  role           Role     @default(EMPLOYEE)
+  active         Boolean  @default(true)
+  locale         String   @default("ar")
+  createdAt      DateTime @default(now())
+  sessions       Session[]
+  assignedLeads  Lead[]   @relation("assigned")
+  activities     OutreachActivity[]
+  followUps      FollowUpTask[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model Campaign {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  country        String
+  cities         String[]
+  industry       String
+  category       String   @default("")
+  services       String[]
+  language       String   @default("ar")
+  targetCount    Int      @default(50)
+  minScore       Int      @default(40)
+  schedule       Schedule @default(MANUAL)
+  status         CampaignStatus @default(DRAFT)
+  runNumber      Int      @default(0)
+  queriesTotal   Int      @default(0)
+  queriesDone    Int      @default(0)
+  candidatesFound Int     @default(0)
+  leadsSaved     Int      @default(0)
+  duplicatesSkipped Int   @default(0)
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  lastError      String?
+  lastNote       String   @default("")
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  leads          Lead[]
+  jobs           BackgroundJob[]
+  @@index([organizationId])
+}
+
+model Lead {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaignId     String?
+  campaign       Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  name           String
+  normalizedName String
+  industry       String   @default("")
+  category       String   @default("")
+  country        String   @default("")
+  city           String   @default("")
+  website        String?
+  domain         String?
+  phone          String?
+  whatsapp       String?
+  whatsappSource String?
+  description    String   @default("")
+  logoUrl        String?
+  verification   Verification @default(UNVERIFIED)
+  verificationNotes String @default("")
+  score          Int      @default(0)
+  status         LeadStatus @default(NEW)
+  notes          String   @default("")
+  assignedToId   String?
+  assignedTo     User?    @relation("assigned", fields: [assignedToId], references: [id], onDelete: SetNull)
+  discoveredAt   DateTime @default(now())
+  lastCheckedAt  DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  socials        LeadSocialAccount[]
+  sources        DiscoverySource[]
+  signals        OpportunitySignal[]
+  analyses       AIAnalysis[]
+  scores         LeadScore[]
+  messages       GeneratedMessage[]
+  activities     OutreachActivity[]
+  followUps      FollowUpTask[]
+  @@index([organizationId, score])
+  @@index([organizationId, status])
+  @@index([organizationId, domain])
+  @@index([organizationId, normalizedName])
+  @@index([assignedToId])
+}
+
+model LeadSocialAccount {
+  id        String  @id @default(cuid())
+  leadId    String
+  lead      Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  platform  String
+  url       String
+  handle    String
+  sourceUrl String
+  verified  Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@unique([leadId, platform, handle])
+  @@index([platform, handle])
+}
+
+model DiscoverySource {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  provider  String
+  url       String
+  title     String   @default("")
+  snippet   String   @default("")
+  query     String   @default("")
+  fetchedAt DateTime @default(now())
+  @@index([leadId])
+}
+
+model OpportunitySignal {
+  id               String   @id @default(cuid())
+  leadId           String
+  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  title            String
+  explanation      String
+  evidence         String
+  sourceUrl        String
+  publishedAt      DateTime?
+  suggestedService String   @default("")
+  confidence       Confidence @default(LOW)
+  uncertain        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  @@index([leadId])
+}
+
+model AIAnalysis {
+  id                String   @id @default(cuid())
+  leadId            String
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  provider          String
+  model             String
+  summary           String
+  suggestedServices String[]
+  insufficientEvidence Boolean @default(false)
+  businessFit       Float?
+  fitReason         String   @default("")
+  inputTokens       Int      @default(0)
+  outputTokens      Int      @default(0)
+  createdAt         DateTime @default(now())
+  @@index([leadId])
+}
+
+model LeadScore {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  total     Int
+  factors   Json
+  method    String   @default("RULES")
+  createdAt DateTime @default(now())
+  @@index([leadId])
+}
+
+model GeneratedMessage {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  language    String
+  style       String
+  length      String
+  content     String
+  source      String   @default("TEMPLATE")
+  saved       Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([leadId])
+}
+
+model OutreachActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String
+  platform  String   @default("")
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+  @@index([leadId])
+  @@index([type, createdAt])
+}
+
+model FollowUpTask {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  leadId         String
+  lead           Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  dueAt          DateTime
+  note           String   @default("")
+  done           Boolean  @default(false)
+  assignedToId   String?
+  assignedTo     User?    @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+  @@index([organizationId, done, dueAt])
+}
+
+model ProviderConnection {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kind           ProviderKind
+  provider       String
+  enabled        Boolean  @default(true)
+  encryptedKey   String?
+  keyHint        String   @default("")
+  model          String   @default("")
+  monthlyLimit   Int      @default(0)
+  usedThisMonth  Int      @default(0)
+  usageMonth     String   @default("")
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  lastStatus     String   @default("UNTESTED")
+  lastError      String   @default("")
+  lastTestedAt   DateTime?
+  updatedAt      DateTime @updatedAt
+  @@unique([organizationId, kind, provider])
+}
+
+model BackgroundJob {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaignId     String?
+  campaign       Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type           String
+  payload        Json
+  status         JobStatus @default(PENDING)
+  attempts       Int      @default(0)
+  maxAttempts    Int      @default(3)
+  runAt          DateTime @default(now())
+  lockedAt       DateTime?
+  finishedAt     DateTime?
+  error          String?
+  result         Json?
+  dedupeKey      String?  @unique
+  createdAt      DateTime @default(now())
+  @@index([status, runAt])
+  @@index([campaignId, status])
+}
+
+model QueryLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider       String
+  query          String
+  results        Int      @default(0)
+  executedAt     DateTime @default(now())
+  @@index([organizationId, provider, query])
+}
+
+model MessageTemplate {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  language       String   @default("ar")
+  content        String
+  createdAt      DateTime @default(now())
+}
+
+model DoNotContact {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String   @default("")
+  domain         String?
+  handle         String?
+  reason         String   @default("")
+  createdAt      DateTime @default(now())
+  @@index([organizationId, domain])
+  @@index([organizationId, handle])
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  action         String
+  entity         String   @default("")
+  entityId       String   @default("")
+  meta           Json?
+  createdAt      DateTime @default(now())
+  @@index([organizationId, createdAt])
+}

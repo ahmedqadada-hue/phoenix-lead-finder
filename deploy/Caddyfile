@@ -1,0 +1,10 @@
+# Caddy obtains and renews the HTTPS certificate automatically for {$DOMAIN}.
+# The domain's DNS "A" record must already point to this server, and ports 80
+# and 443 must be open. With DOMAIN=localhost Caddy uses a local test certificate.
+{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy web:3000
+	header {
+		-Server
+	}
+}

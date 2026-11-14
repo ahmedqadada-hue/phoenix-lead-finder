@@ -1,0 +1,11 @@
+export function PhoenixMark({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true">
+      <rect width="512" height="512" rx="112" fill="#121820" />
+      <path d="M256 396C150 364 92 282 100 164c44 66 96 98 156 118z" fill="#E96A32" />
+      <path d="M256 396c106-32 164-114 156-232-44 66-96 98-156 118z" fill="#F3A34A" />
+      <path d="M256 100c42 58 50 112 0 182-50-70-42-124 0-182z" fill="#F7F8FA" />
+      <path d="M256 396c-18 26-14 46 0 62 14-16 18-36 0-62z" fill="#E96A32" />
+    </svg>
+  );
+}
