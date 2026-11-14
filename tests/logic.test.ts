@@ -209,6 +209,18 @@ describe("security helpers", () => {
     expect(keyHint("sk-test-1234567890")).toBe("••••7890");
     expect(() => decryptSecret(enc.slice(0, -4) + "AAAA")).toThrow();
   });
+  it("accepts a long passphrase as the encryption key and rejects a short one", () => {
+    const saved = process.env.ENCRYPTION_KEY;
+    try {
+      process.env.ENCRYPTION_KEY = "any long random sentence typed by the owner 2026";
+      const enc = encryptSecret("sk-value");
+      expect(decryptSecret(enc)).toBe("sk-value");
+      process.env.ENCRYPTION_KEY = "a different passphrase that is also long enough";
+      expect(() => decryptSecret(enc)).toThrow();
+      process.env.ENCRYPTION_KEY = "too-short";
+      expect(() => encryptSecret("x")).toThrow(/ENCRYPTION_KEY/);
+    } finally { process.env.ENCRYPTION_KEY = saved; }
+  });
   it("blocks SSRF targets", () => {
     for (const u of ["http://localhost/", "http://127.0.0.1/", "http://10.0.0.5/", "http://169.254.169.254/latest/meta-data", "http://192.168.1.1/", "http://[::1]/", "http://[::ffff:10.0.0.1]/", "ftp://example.com/", "file:///etc/passwd", "http://user:pw@example.com/", "http://example.com:8080/", "http://intranet/", "http://db.internal/"]) {
       expect(() => assertSafeUrl(u), u).toThrow(UnsafeUrlError);

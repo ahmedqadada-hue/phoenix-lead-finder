@@ -1,11 +1,12 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
 
 function key(): Buffer {
-  const hex = process.env.ENCRYPTION_KEY ?? "";
-  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
-    throw new Error("ENCRYPTION_KEY is missing or invalid. Set 64 hex characters (openssl rand -hex 32).");
-  }
-  return Buffer.from(hex, "hex");
+  const raw = (process.env.ENCRYPTION_KEY ?? "").trim();
+  // Preferred: 64 hex characters (openssl rand -hex 32).
+  if (/^[0-9a-fA-F]{64}$/.test(raw)) return Buffer.from(raw, "hex");
+  // Also accepted: any passphrase of 32+ characters, turned into a 256-bit key.
+  if (raw.length >= 32) return createHash("sha256").update(raw, "utf8").digest();
+  throw new Error("ENCRYPTION_KEY is missing or too short. Use 64 hex characters, or any random text of at least 32 characters.");
 }
 
 /** AES-256-GCM. Output: v1.<iv>.<tag>.<ciphertext> (base64url). */
