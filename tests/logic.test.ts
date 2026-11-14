@@ -11,6 +11,8 @@ import { rateLimit } from "@/lib/ratelimit";
 import { hashPassword, passwordProblem, verifyPassword } from "@/lib/password";
 import { backoffMs } from "@/lib/jobs";
 import { safeBack } from "@/lib/safeBack";
+// @ts-expect-error plain ESM helper
+import { databaseLikeNames, pickDatabaseUrl } from "../scripts/db-url.mjs";
 
 const base: ScoreInput = { industryMatchesCampaign: true, hasDescription: true, signals: [], verification: "VERIFIED", hasWebsite: true, hasWhatsapp: true, hasPhone: true, socials: [{ platform: "instagram", verified: true }, { platform: "facebook", verified: true }, { platform: "tiktok", verified: false }], lastCheckedAt: new Date(), now: new Date() };
 
@@ -220,6 +222,16 @@ describe("security helpers", () => {
       process.env.ENCRYPTION_KEY = "too-short";
       expect(() => encryptSecret("x")).toThrow(/ENCRYPTION_KEY/);
     } finally { process.env.ENCRYPTION_KEY = saved; }
+  });
+  it("finds the database URL under the names different hosts use", () => {
+    const u = "postgres://u:p@h/db";
+    expect(pickDatabaseUrl({ DATABASE_URL: u })).toEqual({ name: "DATABASE_URL", url: u });
+    expect(pickDatabaseUrl({ DATABASE_URL: "", POSTGRES_URL: u })?.name).toBe("POSTGRES_URL");
+    expect(pickDatabaseUrl({ DATABASE_URL: u, DATABASE_URL_UNPOOLED: u + "2" }, true)?.name).toBe("DATABASE_URL_UNPOOLED");
+    expect(pickDatabaseUrl({ STORAGE_DATABASE_URL: u })?.name).toBe("STORAGE_DATABASE_URL");
+    expect(pickDatabaseUrl({ PRISMA_DATABASE_URL: "prisma+postgres://accelerate/?api_key=x" })).toBeNull();
+    expect(pickDatabaseUrl({})).toBeNull();
+    expect(databaseLikeNames({ POSTGRES_URL: "secret", HOME: "/x" })).toEqual(["POSTGRES_URL"]);
   });
   it("blocks SSRF targets", () => {
     for (const u of ["http://localhost/", "http://127.0.0.1/", "http://10.0.0.5/", "http://169.254.169.254/latest/meta-data", "http://192.168.1.1/", "http://[::1]/", "http://[::ffff:10.0.0.1]/", "ftp://example.com/", "file:///etc/passwd", "http://user:pw@example.com/", "http://example.com:8080/", "http://intranet/", "http://db.internal/"]) {

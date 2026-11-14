@@ -15,7 +15,7 @@
     "test": "vitest run",
     "test:live": "LIVE_TESTS=1 vitest run tests/live",
     "typecheck": "tsc --noEmit",
-    "vercel-build": "prisma generate && DATABASE_URL=\"${DATABASE_URL_UNPOOLED:-$DATABASE_URL}\" prisma migrate deploy && next build"
+    "vercel-build": "node scripts/vercel-build.mjs"
   },
   "dependencies": {
     "@fontsource-variable/cairo": "^5.3.0",

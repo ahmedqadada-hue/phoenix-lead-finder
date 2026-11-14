@@ -60,7 +60,7 @@ Results recorded when this version was built (November 2026):
 
 | Item | Result |
 |---|---|
-| `npm test` | 88 tests passed in 4 files |
+| `npm test` | 89 tests passed in 4 files |
 | `npm run typecheck`, `npm run build` | passed |
 | Real-browser check (Chromium): first-run setup, sign-in/out, add lead, worker scoring, template message, WhatsApp prefill, Instagram copy-and-open, "contact opened" vs "mark as sent", all 14 sections, mobile layout, English switch | passed, no console errors |
 | `docker compose config` | valid |
