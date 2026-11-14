@@ -42,6 +42,10 @@ Browser / installed PWA  ──HTTPS──>  Caddy (TLS)  ──>  web  (Next.js
 
 Jobs retry temporary failures with exponential backoff, at most 3 attempts. Invalid keys are not retried and the provider is flagged.
 
+## Serverless mode (Vercel)
+
+Where no worker process can run, the same job handlers are driven by `workFor(budgetMs)`: from `/api/cron/tick` (Vercel Cron, protected by `CRON_SECRET`) and from the open app through `pumpJobsAction` while jobs are queued. Enabled automatically on Vercel, or with `SERVERLESS_WORKER=1`.
+
 ## Adding a provider
 
 - **Search**: implement `SearchProvider` (`src/lib/providers/search/types.ts`) and add it to `registry.ts`. It appears on the Search Providers page automatically.

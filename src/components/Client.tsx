@@ -28,3 +28,28 @@ export function InstallHelp({ locale }: { locale: "ar" | "en" }) {
     </ul>
   );
 }
+
+/** Serverless hosting only: keeps queued jobs moving while someone has the app open. */
+export function JobPump({ locale }: { locale: "ar" | "en" }) {
+  const router = useRouter();
+  useEffect(() => {
+    let stop = false;
+    (async () => {
+      const { pumpJobsAction } = await import("@/actions/pump");
+      while (!stop) {
+        try {
+          const r = await pumpJobsAction();
+          if (r.processed > 0) router.refresh();
+          if (r.remaining === 0) break;
+        } catch { await new Promise((res) => setTimeout(res, 5000)); }
+      }
+      if (!stop) router.refresh();
+    })();
+    return () => { stop = true; };
+  }, [router]);
+  return (
+    <div role="status" className="fixed bottom-4 start-4 z-20 rounded-full bg-charcoal px-4 py-2 text-xs font-semibold text-white shadow-lg lg:start-[17rem]">
+      {locale === "ar" ? "جارٍ تنفيذ مهام البحث… أبقِ هذه الصفحة مفتوحة" : "Running discovery jobs… keep this page open"}
+    </div>
+  );
+}

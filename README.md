@@ -61,7 +61,8 @@ Open http://localhost:3000 — the first visit asks you to create the administra
 |---|---|
 | [docs/USER_GUIDE_AR.md](docs/USER_GUIDE_AR.md) | دليل المستخدم بالعربية |
 | [docs/INSTALLATION.md](docs/INSTALLATION.md) | Installing and the first-run setup |
-| [docs/VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md) | Deploying on an Ubuntu VPS with HTTPS, backups, updates |
+| [docs/VPS_DEPLOYMENT.md](docs/VPS_DEPLOYMENT.md) | Deploying on an Ubuntu VPS with HTTPS, backups, updates (one command: `sudo bash deploy/install.sh your.domain`) |
+| [docs/VERCEL_DEPLOYMENT_AR.md](docs/VERCEL_DEPLOYMENT_AR.md) | النشر على Vercel بدون خادم، وما يختلف فيه |
 | [docs/SEARCH_PROVIDERS.md](docs/SEARCH_PROVIDERS.md) | Search sources and how to get the free keys |
 | [docs/AI_CONFIGURATION.md](docs/AI_CONFIGURATION.md) | AI providers, limits, Sign in with ChatGPT status |
 | [docs/SECURITY.md](docs/SECURITY.md) | Security model and operator checklist |

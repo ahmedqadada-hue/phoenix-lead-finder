@@ -380,3 +380,23 @@ export async function drainJobs(max = 500): Promise<number> {
   }
   return n;
 }
+
+/** Serverless-friendly worker step: housekeeping, then jobs until the time budget is used.
+ *  Used where no long-running worker process exists (for example Vercel). */
+export async function workFor(budgetMs: number, opts: { housekeeping?: boolean } = {}): Promise<{ processed: number; remaining: number }> {
+  const deadline = Date.now() + budgetMs;
+  if (opts.housekeeping) {
+    const { recoverStaleJobs } = await import("../jobs");
+    await recoverStaleJobs();
+    await runScheduler();
+  }
+  let processed = 0;
+  while (Date.now() < deadline) {
+    const job = await claimNext();
+    if (!job) break;
+    await runJob(job);
+    processed++;
+  }
+  const remaining = await db.backgroundJob.count({ where: { status: "PENDING", runAt: { lte: new Date() }, OR: [{ campaignId: null }, { campaign: { status: "RUNNING" } }] } });
+  return { processed, remaining };
+}

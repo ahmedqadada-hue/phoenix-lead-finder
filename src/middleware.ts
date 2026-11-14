@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC = [/^\/login$/, /^\/setup$/, /^\/offline$/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//, /^\/api\/health$/];
+const PUBLIC = [/^\/login$/, /^\/setup$/, /^\/offline$/, /^\/manifest\.webmanifest$/, /^\/sw\.js$/, /^\/icons\//, /^\/api\/health$/, /^\/api\/cron\//];
 
 // First gate only: it redirects visitors without a session cookie. The real
 // session + role checks run on the server in every page and action.

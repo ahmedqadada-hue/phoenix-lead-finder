@@ -15,7 +15,7 @@ export async function createSession(userId: string) {
   await db.session.create({ data: { id: sha256(token), userId, expiresAt } }); // only a hash is stored
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true, sameSite: "lax", path: "/", expires: expiresAt,
-    secure: (process.env.APP_URL ?? "").startsWith("https://"),
+    secure: (process.env.APP_URL ?? "").startsWith("https://") || !!process.env.VERCEL,
   });
 }
 

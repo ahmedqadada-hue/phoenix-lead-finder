@@ -3,13 +3,19 @@ import { getTr } from "@/lib/i18n";
 import { ROLE_LABEL, pick } from "@/lib/labels";
 import { Nav, type NavItem } from "@/components/Nav";
 import { logoutAction, setLocaleAction } from "@/actions/auth";
+import { db } from "@/lib/db";
+import { JobPump } from "@/components/Client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   const { tr, locale } = await getTr();
   const mgr = isManager(user), admin = user.role === "ADMIN";
+  // On serverless hosting there is no worker process: the open app moves the queue along.
+  const serverless = !!process.env.VERCEL || process.env.SERVERLESS_WORKER === "1";
+  const due = serverless ? await db.backgroundJob.count({ where: { organizationId: user.organizationId, status: "PENDING", runAt: { lte: new Date() }, OR: [{ campaignId: null }, { campaign: { status: "RUNNING" } }] } }) : 0;
   const work = tr("العمل", "Work"), manage = tr("الإدارة", "Management"), system = tr("النظام", "System");
   const items: NavItem[] = [
     { href: "/", label: tr("لوحة التحكم", "Dashboard"), icon: "home" },
@@ -46,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </Nav>
       <main className="lg:ps-64">
         <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">{children}</div>
+        {due > 0 && <JobPump locale={locale} />}
       </main>
     </div>
   );

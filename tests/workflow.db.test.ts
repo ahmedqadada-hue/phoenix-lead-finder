@@ -19,7 +19,7 @@ import { encryptSecret } from "@/lib/crypto";
 import { hashPassword } from "@/lib/password";
 import { leadScope } from "@/lib/auth";
 import { claimNext, enqueue, recoverStaleJobs } from "@/lib/jobs";
-import { drainJobs, ingestCandidate, runJob, runScheduler, startCampaignRun } from "@/lib/discovery/engine";
+import { drainJobs, ingestCandidate, runJob, runScheduler, startCampaignRun, workFor } from "@/lib/discovery/engine";
 import { tavily } from "@/lib/providers/search/web";
 import { osm } from "@/lib/providers/search/osm";
 import { AI_PROVIDERS } from "@/lib/providers/ai/registry";
@@ -331,5 +331,17 @@ describe("background jobs", () => {
     const done = await db.campaign.findUniqueOrThrow({ where: { id: campaignId } });
     expect(done.status).toBe("COMPLETED");
     expect(done.nextRunAt!.getTime()).toBeGreaterThan(Date.now() + 23 * 3600_000);
+  });
+
+  it("serverless mode: a time-boxed step runs due schedules and drains the queue without a worker process", async () => {
+    await reset();
+    await db.campaign.update({ where: { id: campaignId }, data: { schedule: "WEEKLY", status: "COMPLETED", nextRunAt: new Date(Date.now() - 1000) } });
+    expect(await workFor(0, { housekeeping: true })).toMatchObject({ processed: 0 }); // zero budget: schedules start, nothing is processed
+    expect(await db.backgroundJob.count({ where: { campaignId, status: "PENDING" } })).toBeGreaterThan(0);
+    const r = await workFor(20_000);
+    expect(r.processed).toBeGreaterThan(0);
+    expect(r.remaining).toBe(0);
+    expect((await db.campaign.findUniqueOrThrow({ where: { id: campaignId } })).status).toBe("COMPLETED");
+    expect(await db.lead.count({ where: { organizationId: orgId } })).toBe(2);
   });
 });

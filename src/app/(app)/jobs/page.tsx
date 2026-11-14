@@ -29,7 +29,7 @@ export default async function Jobs({ searchParams }: { searchParams: Promise<Rec
     <>
       <AutoRefresh active={count("PENDING") + count("RUNNING") > 0} />
       <PageHeader title={tr("مهام الخلفية", "Background Jobs")} subtitle={tr("تُنفَّذ هذه المهام على الخادم بواسطة العامل الخلفي، سواء كان متصفحك مفتوحاً أم لا.", "These jobs run on the server by the background worker, whether or not your browser is open.")} />
-      {oldestPending && <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{tr("توجد مهام منتظرة منذ أكثر من دقيقتين. تأكد أن العامل الخلفي (worker) يعمل على الخادم.", "Some jobs have been waiting for over two minutes. Check that the background worker is running on the server.")}</div>}
+      {oldestPending && !process.env.VERCEL && <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{tr("توجد مهام منتظرة منذ أكثر من دقيقتين. تأكد أن العامل الخلفي (worker) يعمل على الخادم.", "Some jobs have been waiting for over two minutes. Check that the background worker is running on the server.")}</div>}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {["PENDING", "RUNNING", "DONE", "FAILED", "CANCELLED"].map((s) => <Stat key={s} label={pick(JOB_STATUS_LABEL, s, locale)} value={count(s)} href={`/jobs?status=${s}`} />)}
       </div>

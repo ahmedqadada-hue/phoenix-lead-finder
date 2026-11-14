@@ -60,7 +60,7 @@ Results recorded when this version was built (November 2026):
 
 | Item | Result |
 |---|---|
-| `npm test` | 86 tests passed in 4 files |
+| `npm test` | 87 tests passed in 4 files |
 | `npm run typecheck`, `npm run build` | passed |
 | Real-browser check (Chromium): first-run setup, sign-in/out, add lead, worker scoring, template message, WhatsApp prefill, Instagram copy-and-open, "contact opened" vs "mark as sent", all 14 sections, mobile layout, English switch | passed, no console errors |
 | `docker compose config` | valid |
@@ -68,5 +68,7 @@ Results recorded when this version was built (November 2026):
 | **Live OpenStreetMap search** | **not verified** — every Overpass server was unreachable from the build environment's network. Run `npm run test:live` and press **Test connection** on your server. |
 | **Live Tavily / Brave / Serper / You.com** | **not verified** — no API keys were available. Status in the app: CONFIGURATION REQUIRED. |
 | **Live OpenAI / Gemini / Groq** | **not verified** — no API keys were available. Status in the app: CONFIGURATION REQUIRED. |
+| Serverless mode (no worker process): cron endpoint authorisation and jobs processed from the open app | passed locally with `SERVERLESS_WORKER=1` |
+| **Deployment on Vercel** | **not performed** — follow `VERCEL_DEPLOYMENT_AR.md` and verify step 6. |
 | Deployment on a VPS, real HTTPS certificate | **not performed** — follow `VPS_DEPLOYMENT.md` and verify step 8. |
 | PWA install prompt on physical phones | not tested on devices; the manifest, icons and service worker are served and valid. |

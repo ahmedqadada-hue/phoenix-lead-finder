@@ -4,6 +4,14 @@ This guide puts the whole system on one Linux server: database, web app, backgro
 
 > These steps are prepared and the configuration files are validated, but **your** deployment only counts as done after step 8 succeeds on your server.
 
+## Shortcut: one command
+
+After steps 1 and 4 below (DNS record, project folder on the server), this does steps 2, 3, 5 and 6 for you, generating the secrets itself:
+
+```bash
+sudo bash deploy/install.sh leads.example.com you@example.com
+```
+
 ## What you need
 
 - An Ubuntu 22.04 or 24.04 VPS with at least 2 GB RAM (1 GB works only with swap enabled).
